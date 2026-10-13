@@ -118,3 +118,8 @@ nav a.hide{display:none}
 .sharelabel{font-size:12px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-right:2px}
 .sbtn{font:inherit;font-size:12.5px;font-weight:700;text-decoration:none;cursor:pointer;border:1px solid var(--line2);background:#fff;color:#25303f;padding:7px 13px;border-radius:999px;transition:.15s}
 .sbtn:hover{background:#f4f7fd;border-color:#b9c9e6}
+
+/* reserve space so images never cause layout shift */
+.fig img{aspect-ratio:auto;height:auto}
+.hero-fig img{background:#eef2f8}
+.logo img{aspect-ratio:108/96}
