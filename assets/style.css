@@ -122,4 +122,4 @@ nav a.hide{display:none}
 /* reserve space so images never cause layout shift */
 .fig img{aspect-ratio:auto;height:auto}
 .hero-fig img{background:#eef2f8}
-.logo img{aspect-ratio:108/96}
+.logo img{aspect-ratio:77/68}
