@@ -1,0 +1,76 @@
+name: IndexNow
+
+# Tells Bing, Yandex and other participating engines about new or changed
+# URLs as soon as they land, instead of waiting for a crawl.
+#
+# The key file f57dff78a9f0a8a53a4e02cb6e1485f7.txt sits at the site root.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "articles/**.html"
+      - "hi/articles/**.html"
+      - "sitemap.xml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Collect changed article URLs
+        id: urls
+        run: |
+          python3 - <<'PY' >> $GITHUB_OUTPUT
+          import subprocess, os
+          try:
+              out = subprocess.run(["git","diff","--name-only","HEAD~1","HEAD"],
+                                   capture_output=True, text=True, check=True).stdout
+          except Exception:
+              out = ""
+          urls = []
+          for line in out.splitlines():
+              p = line.strip()
+              if p.endswith(".html") and (p.startswith("articles/") or p.startswith("hi/articles/")):
+                  urls.append("https://space.anipix.me/" + p)
+          # on a manual run, or if nothing matched, send the sitemap's articles
+          if not urls:
+              urls = ["https://space.anipix.me/sitemap.xml"]
+          print("list=" + ",".join(urls))
+          print("count=" + str(len(urls)))
+          PY
+
+      - name: Submit to IndexNow
+        env:
+          KEY: f57dff78a9f0a8a53a4e02cb6e1485f7
+          URLS: ${{ steps.urls.outputs.list }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+          urls = [u for u in os.environ["URLS"].split(",") if u]
+          body = {
+              "host": "space.anipix.me",
+              "key": os.environ["KEY"],
+              "keyLocation": f'https://space.anipix.me/{os.environ["KEY"]}.txt',
+              "urlList": urls,
+          }
+          req = urllib.request.Request(
+              "https://api.indexnow.org/indexnow",
+              data=json.dumps(body).encode(),
+              headers={"Content-Type": "application/json; charset=utf-8"},
+              method="POST")
+          try:
+              with urllib.request.urlopen(req, timeout=45) as r:
+                  print("IndexNow:", r.status, "for", len(urls), "URLs")
+          except urllib.error.HTTPError as e:
+              print("IndexNow HTTP", e.code, e.read()[:200])
+          except Exception as e:
+              print("IndexNow failed:", e)
+          PY
